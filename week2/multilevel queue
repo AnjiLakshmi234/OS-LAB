@@ -1,0 +1,91 @@
+#include <stdio.h>
+
+#define MAX 20
+
+typedef struct {
+    int pid, arrival, burst, queue, ct, tat, wt;
+} Process;
+
+// Function to sort processes based on Arrival Time (FCFS)
+void sortByArrival(Process p[], int n) {
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (p[j].arrival > p[j + 1].arrival) {
+                Process temp = p[j];
+                p[j] = p[j + 1];
+                p[j + 1] = temp;
+            }
+        }
+    }
+}
+
+// Function to execute FCFS scheduling and calculate CT, TAT, WT
+void fcfs(Process p[], int n, int *currentTime) {
+    printf("Gantt Chart: ");
+    for (int i = 0; i < n; i++) {
+        if (*currentTime < p[i].arrival)
+            *currentTime = p[i].arrival; // Wait for the process to arrive
+        printf("| P%d (%d-%d) ", p[i].pid, *currentTime, *currentTime + p[i].burst);
+
+        // Calculate Completion Time (CT), Turnaround Time (TAT), and Waiting Time (WT)
+        p[i].ct = *currentTime + p[i].burst;
+        p[i].tat = p[i].ct - p[i].arrival;
+        p[i].wt = p[i].tat - p[i].burst;
+
+        *currentTime += p[i].burst;
+    }
+    printf("|\n");
+}
+
+// Function to print process details (CT, TAT, WT)
+void printProcessDetails(Process p[], int n) {
+    printf("\nProcess\tAT\tBT\tCT\tTAT\tWT\n");
+    for (int i = 0; i < n; i++) {
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\n", p[i].pid, p[i].arrival, p[i].burst, p[i].ct, p[i].tat, p[i].wt);
+    }
+}
+
+int main() {
+    Process systemQ[MAX], userQ[MAX];
+    int sysCount = 0, userCount = 0, n;
+    int currentTime = 0;
+
+    // User Input
+    printf("Enter the number of processes: ");
+    scanf("%d", &n);
+
+    Process processes[MAX];
+    for (int i = 0; i < n; i++) {
+        printf("Enter Process ID, Arrival Time, Burst Time, Queue Type (0=System, 1=User): ");
+        scanf("%d %d %d %d", &processes[i].pid, &processes[i].arrival, &processes[i].burst, &processes[i].queue);
+    }
+
+    // Sort processes by arrival time
+    sortByArrival(processes, n);
+
+    // Categorizing into queues
+    for (int i = 0; i < n; i++) {
+        if (processes[i].queue == 0)
+            systemQ[sysCount++] = processes[i]; // System Queue (Higher Priority)
+        else
+            userQ[userCount++] = processes[i]; // User Queue (Lower Priority)
+    }
+
+    // Execute System Queue
+    printf("\nExecuting System Queue (Higher Priority - FCFS)\n");
+    fcfs(systemQ, sysCount, &currentTime);
+    printProcessDetails(systemQ, sysCount);
+
+    // Execute User Queue
+    printf("\nExecuting User Queue (Lower Priority - FCFS)\n");
+    fcfs(userQ, userCount, &currentTime);
+    printProcessDetails(userQ, userCount);
+
+    // Final Gantt Chart
+    printf("\nFinal Gantt Chart:\n");
+    currentTime = 0;
+    fcfs(systemQ, sysCount, &currentTime);
+    fcfs(userQ, userCount, &currentTime);
+    
+    return 0;
+}
